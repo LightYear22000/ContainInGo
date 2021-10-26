@@ -1,2 +1,7 @@
-.idea/
-ContainInGo
+# Exclude binaries
+main
+cig
+
+# Exclude ide folders
+.idea
+.vscode
