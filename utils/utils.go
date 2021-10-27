@@ -11,6 +11,31 @@ const cigImagesPath = cigHomePath + "/images"
 const cigContainersPath = "/var/run/cig/containers"
 const cigNetNsPath = "/var/run/cig/net-ns"
 
+// return cigImagesPath if it exists
+func GetCigImagesPath() string {
+	return cigImagesPath
+}
+
+// return cigTempPath if it exists
+func GetCigTempPath() string {
+	return cigTempPath
+}
+
+// return cigHomepath if it exists
+func GetCigHomePath() string {
+	return cigHomePath
+}
+
+// return cigContainersPath if it exists
+func GetCigContainersPath() string {
+	return cigContainersPath
+}
+
+// return cignetnspath if exits
+func GetCigNetNsPath() string {
+	return cigNetNsPath
+}
+
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {

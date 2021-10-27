@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"ContainInGo/container"
 	flag "github.com/spf13/pflag"
 )
 
@@ -55,10 +56,10 @@ func main() {
 		fs := flag.FlagSet{}
 		fs.ParseErrorsWhitelist.UnknownFlags = true
 
-		// mem := fs.Int("mem", -1, "Max RAM to allow in MB")
-		// swap := fs.Int("swap", -1, "Max swap to allow in MB")
-		// pids := fs.Int("pids", -1, "Number of max processes to allow")
-		// cpus := fs.Float64("cpus", -1, "Number of CPU cores to restrict to")
+		mem := fs.Int("mem", -1, "Max RAM to allow in MB")
+		swap := fs.Int("swap", -1, "Max swap to allow in MB")
+		pids := fs.Int("pids", -1, "Number of max processes to allow")
+		cpus := fs.Float64("cpus", -1, "Number of CPU cores to restrict to")
 		if err := fs.Parse(os.Args[2:]); err != nil {
 			fmt.Println("Error parsing: ", err)
 		}
@@ -73,5 +74,6 @@ func main() {
 			}
 		}
 		log.Println("Bridge set up succesfully!")
+		container.InitContainer(*mem, *swap, *pids, *cpus, fs.Args()[0], fs.Args()[1:])
 	}
 }

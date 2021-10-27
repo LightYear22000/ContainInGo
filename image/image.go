@@ -1,0 +1,161 @@
+package image
+
+import (
+	"encoding/json"
+	// "fmt"
+	"github.com/google/go-containerregistry/pkg/crane"
+	// v1 "github.com/google/go-containerregistry/pkg/v1"
+	"ContainInGo/utils"
+	"io/ioutil"
+	"log"
+	"os"
+	"strings"
+)
+
+/*
+	Parse Image name and tag name from source
+	Example : alphine:latest
+*/
+func getImageNameAndTag(src string) (string, string) {
+	s := strings.Split(src, ":")
+	var img, tag string
+	if len(s) > 1 {
+		img, tag = s[0], s[1]
+	} else {
+		img = s[0]
+		tag = "latest"
+	}
+	return img, tag
+}
+
+/*
+	* Check if images.json already exits.
+	* If not, create an empty one.
+	* Read from imageDBpath and parse the image metadata.
+	
+*/
+
+func parseImagesMetadata(idb *imagesDB)  {
+	imagesDBPath := utils.GetCigImagesPath() + "/" + "images.json"
+	if _, err := os.Stat(imagesDBPath); os.IsNotExist(err) {
+		/* If it doesn't exist create an empty DB */
+		ioutil.WriteFile(imagesDBPath, []byte("{}"), 0644)
+	}
+	data, err := ioutil.ReadFile(imagesDBPath)
+	if err != nil {
+		log.Fatalf("Could not read images DB: %v\n", err)
+	}
+	if err := json.Unmarshal(data, idb); err != nil {
+		log.Fatalf("Unable to parse images DB: %v\n", err)
+	}
+}
+
+/* 
+	* Check if image already exists by hash, return metadata.
+*/
+
+func imageExistsByHash(imageShaHex string) (string, string) {
+	idb := imagesDB{}
+	parseImagesMetadata(&idb)
+	for imgName, avlImages := range idb {
+		for imgTag, imgHash := range avlImages {
+			if imgHash == imageShaHex {
+				return imgName, imgTag
+			}
+		}
+	}
+	return "", ""
+}
+
+/* 
+	* Check if image already exists by tag, return metadata.
+*/
+
+func imageExistByTag(imgName string, tagName string) (bool, string) {
+	idb := imagesDB{}
+	parseImagesMetadata(&idb)
+	for k, v := range idb {
+		if k == imgName {
+			for k, v := range v {
+				if k == tagName {
+					return true, v
+				}
+			}
+		}
+	}
+	return false, ""
+}
+
+func marshalImageMetadata(idb imagesDB) {
+	fileBytes, err := json.Marshal(idb)
+	if err != nil {
+		log.Fatalf("Unable to marshall images data: %v\n", err)
+	}
+	imagesDBPath := utils.GetCigImagesPath() + "/" + "images.json"
+	if err := ioutil.WriteFile(imagesDBPath, fileBytes, 0644); err != nil {
+		log.Fatalf("Unable to save images DB: %v\n", err)
+	}
+}
+
+/* 
+	* Store image metadata in images.json
+	* ubuntu -> unique_hash
+	* ubuntu:latest -> ubuntu
+*/
+
+func storeImageMetadata(image string, tag string, imageShaHex string) {
+	idb := imagesDB{}
+	ientry := imageEntries{}
+	parseImagesMetadata(&idb)
+	if idb[image] != nil {
+		ientry = idb[image]
+	}
+	ientry[tag] = imageShaHex
+	idb[image] = ientry
+	// fmt.Println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+	// fmt.Println(idb)
+	marshalImageMetadata(idb)
+}
+
+
+/*
+	* Download image if required and write it's metadata.
+*/ 
+
+func DownloadImageIfRequired(src string) string {
+	imgName, tagName := getImageNameAndTag(src)
+	if downloadNotRequired, imageShaHex := imageExistByTag(imgName, tagName); !downloadNotRequired {
+		/* Setup the image we want to pull */
+		log.Printf("Downloading metadata for %s:%s, please wait...", imgName, tagName)
+		img, err := crane.Pull(strings.Join([]string{imgName, tagName}, ":"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		manifest, _ := img.Manifest()
+		// log.Println(manifest)
+		// log.Printf("Downloaded")
+		imageShaHex = manifest.Config.Digest.Hex[:12]
+		log.Printf("imageHash: %v\n", imageShaHex)
+		log.Println("Checking if image exists under another name...")
+		/* Identify cases where ubuntu:latest could be the same as ubuntu:20.04*/
+		altImgName, altImgTag := imageExistsByHash(imageShaHex)
+		if len(altImgName) > 0 && len(altImgTag) > 0 {
+			log.Printf("The image you requested %s:%s is the same as %s:%s\n",
+				imgName, tagName, altImgName, altImgTag)
+			storeImageMetadata(imgName, tagName, imageShaHex)
+			return imageShaHex
+		} else {
+			log.Println("Image doesn't exist. Downloading...")
+			// downloadImage(img, imageShaHex, src)
+			// untarFile(imageShaHex)
+			// processLayerTarballs(imageShaHex, manifest.Config.Digest.Hex)
+			// storeImageMetadata(imgName, tagName, imageShaHex)
+			// deleteTempImageFiles(imageShaHex)
+			return imageShaHex
+		}
+	} else {
+		log.Println("Image already exists. Not downloading.")
+		return imageShaHex
+	}
+}
