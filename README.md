@@ -14,7 +14,7 @@ An extremely basic container written in Go
 
 - Build CIG using
 
-  `go build -o cig`
+  `make build`
 
 - Run CIG
 
