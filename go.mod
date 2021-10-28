@@ -14,7 +14,7 @@ require (
 	github.com/docker/docker v20.10.7+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.6.3 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/go-containerregistry v0.6.0 // indirect
+	github.com/google/go-containerregistry v0.6.0
 	github.com/klauspost/compress v1.13.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect

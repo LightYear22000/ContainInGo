@@ -4,13 +4,25 @@ import (
 	"encoding/json"
 	// "fmt"
 	"github.com/google/go-containerregistry/pkg/crane"
-	// v1 "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"ContainInGo/utils"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 )
+
+func getBasePathForImage(imageShaHex string) string {
+	return utils.GetCigImagesPath() + "/" + imageShaHex
+}
+
+func getManifestPathForImage(imageShaHex string) string {
+	return getBasePathForImage(imageShaHex) + "/manifest.json"
+}
+
+func getConfigPathForImage(imageShaHex string) string {
+	return getBasePathForImage(imageShaHex) + "/" + imageShaHex + ".json"
+}
 
 /*
 	Parse Image name and tag name from source
@@ -35,7 +47,7 @@ func getImageNameAndTag(src string) (string, string) {
 	
 */
 
-func parseImagesMetadata(idb *imagesDB)  {
+func parseImagesMetadata(idb *utils.ImagesDB)  {
 	imagesDBPath := utils.GetCigImagesPath() + "/" + "images.json"
 	if _, err := os.Stat(imagesDBPath); os.IsNotExist(err) {
 		/* If it doesn't exist create an empty DB */
@@ -55,7 +67,7 @@ func parseImagesMetadata(idb *imagesDB)  {
 */
 
 func imageExistsByHash(imageShaHex string) (string, string) {
-	idb := imagesDB{}
+	idb := utils.ImagesDB{}
 	parseImagesMetadata(&idb)
 	for imgName, avlImages := range idb {
 		for imgTag, imgHash := range avlImages {
@@ -72,7 +84,7 @@ func imageExistsByHash(imageShaHex string) (string, string) {
 */
 
 func imageExistByTag(imgName string, tagName string) (bool, string) {
-	idb := imagesDB{}
+	idb := utils.ImagesDB{}
 	parseImagesMetadata(&idb)
 	for k, v := range idb {
 		if k == imgName {
@@ -86,7 +98,7 @@ func imageExistByTag(imgName string, tagName string) (bool, string) {
 	return false, ""
 }
 
-func marshalImageMetadata(idb imagesDB) {
+func marshalImageMetadata(idb utils.ImagesDB) {
 	fileBytes, err := json.Marshal(idb)
 	if err != nil {
 		log.Fatalf("Unable to marshall images data: %v\n", err)
@@ -104,16 +116,14 @@ func marshalImageMetadata(idb imagesDB) {
 */
 
 func storeImageMetadata(image string, tag string, imageShaHex string) {
-	idb := imagesDB{}
-	ientry := imageEntries{}
+	idb := utils.ImagesDB{}
+	ientry := utils.ImageEntries{}
 	parseImagesMetadata(&idb)
 	if idb[image] != nil {
 		ientry = idb[image]
 	}
 	ientry[tag] = imageShaHex
 	idb[image] = ientry
-	// fmt.Println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-	// fmt.Println(idb)
 	marshalImageMetadata(idb)
 }
 
@@ -121,6 +131,17 @@ func storeImageMetadata(image string, tag string, imageShaHex string) {
 /*
 	* Download image if required and write it's metadata.
 */ 
+
+func downloadImage(img v1.Image, imageShaHex string, src string) {
+	path := utils.GetCigTempPath() + "/" + imageShaHex
+	os.Mkdir(path, 0755)
+	path +="/package.tar"
+	/* Save the image as a tar file */
+	if err := crane.SaveLegacy(img, src, path); err != nil {
+		log.Fatalf("saving tarball %s: %v", path, err)
+	}
+	log.Printf("Successfully downloaded %s\n", src)
+}
 
 func DownloadImageIfRequired(src string) string {
 	imgName, tagName := getImageNameAndTag(src)
@@ -133,8 +154,6 @@ func DownloadImageIfRequired(src string) string {
 		}
 
 		manifest, _ := img.Manifest()
-		// log.Println(manifest)
-		// log.Printf("Downloaded")
 		imageShaHex = manifest.Config.Digest.Hex[:12]
 		log.Printf("imageHash: %v\n", imageShaHex)
 		log.Println("Checking if image exists under another name...")
@@ -147,9 +166,9 @@ func DownloadImageIfRequired(src string) string {
 			return imageShaHex
 		} else {
 			log.Println("Image doesn't exist. Downloading...")
-			// downloadImage(img, imageShaHex, src)
-			// untarFile(imageShaHex)
-			// processLayerTarballs(imageShaHex, manifest.Config.Digest.Hex)
+			downloadImage(img, imageShaHex, src)
+			UntarFile(imageShaHex)
+			processLayerTarballs(imageShaHex, manifest.Config.Digest.Hex)
 			// storeImageMetadata(imgName, tagName, imageShaHex)
 			// deleteTempImageFiles(imageShaHex)
 			return imageShaHex

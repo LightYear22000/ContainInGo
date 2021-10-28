@@ -3,6 +3,9 @@ package utils
 import (
 	"log"
 	"os"
+	"io"
+	"io/ioutil"
+	"encoding/json"
 )
 
 const cigHomePath = "/var/lib/cig"
@@ -58,6 +61,37 @@ func createDirsIfDontExist(dirs []string) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func ParseManifest(manifestPath string, mani *Manifest) error {
+	data, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(data, mani); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CopyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err := io.Copy(out, in); err != nil {
+		return err
 	}
 	return nil
 }
