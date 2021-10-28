@@ -13,7 +13,7 @@ import (
 	Untar tar file pointed by pathTar at the pathDir  
 */
 
-func UntarFile(imageShaHex string) {
+func untarFile(imageShaHex string) {
 	pathDir := utils.GetCigTempPath() + "/" + imageShaHex
 	pathTar := pathDir + "/package.tar"
 	if err := untar(pathTar, pathDir); err != nil {
@@ -123,7 +123,7 @@ func processLayerTarballs(imageShaHex string, fullImageHex string) {
 		log.Printf("Uncompressing layer to: %s \n", imageLayerDir)
 		_ = os.MkdirAll(imageLayerDir, 0755)
 		srcLayer := tmpPathDir + "/" + layer
-		if err := untar(srcLayer, imageLayerDir); err != nil {
+		if err:= untar(srcLayer, imageLayerDir); err != nil {
 			log.Fatalf("Unable to untar layer file: %s: %v\n", srcLayer, err)
 		}
 	}
@@ -131,3 +131,4 @@ func processLayerTarballs(imageShaHex string, fullImageHex string) {
 	utils.CopyFile(pathManifest, getManifestPathForImage(imageShaHex))
 	utils.CopyFile(pathConfig, getConfigPathForImage(imageShaHex))
 }
+

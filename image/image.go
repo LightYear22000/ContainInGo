@@ -167,7 +167,7 @@ func DownloadImageIfRequired(src string) string {
 		} else {
 			log.Println("Image doesn't exist. Downloading...")
 			downloadImage(img, imageShaHex, src)
-			UntarFile(imageShaHex)
+			untarFile(imageShaHex)
 			processLayerTarballs(imageShaHex, manifest.Config.Digest.Hex)
 			// storeImageMetadata(imgName, tagName, imageShaHex)
 			// deleteTempImageFiles(imageShaHex)
