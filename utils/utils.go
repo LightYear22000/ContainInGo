@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"log"
-	"os"
+	"encoding/json"
 	"io"
 	"io/ioutil"
-	"encoding/json"
+	"log"
+	"os"
 )
 
 const cigHomePath = "/var/lib/cig"
@@ -99,5 +99,22 @@ func CopyFile(src, dst string) error {
 func RemoveLinkIfExists(path string) {
 	if _, err := os.Lstat(path); err == nil {
 		os.Remove(path)
+	}
+}
+
+func DeleteFiles(path string) {
+	doOrDieWithMsg(os.RemoveAll(path),
+		"Unable to file: "+path)
+}
+
+func doOrDie(err error) {
+	if err != nil {
+		log.Fatalf("Fatal error: %v\n", err)
+	}
+}
+
+func doOrDieWithMsg(err error, msg string) {
+	if err != nil {
+		log.Fatalf("Fatal error: %s: %v\n", msg, err)
 	}
 }

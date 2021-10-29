@@ -3,13 +3,14 @@ package image
 import (
 	"encoding/json"
 	// "fmt"
-	"github.com/google/go-containerregistry/pkg/crane"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"ContainInGo/utils"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/google/go-containerregistry/pkg/crane"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 func getBasePathForImage(imageShaHex string) string {
@@ -41,13 +42,13 @@ func getImageNameAndTag(src string) (string, string) {
 }
 
 /*
-	* Check if images.json already exits.
-	* If not, create an empty one.
-	* Read from imageDBpath and parse the image metadata.
-	
-*/
+* Check if images.json already exits.
+* If not, create an empty one.
+* Read from imageDBpath and parse the image metadata.
 
-func parseImagesMetadata(idb *utils.ImagesDB)  {
+ */
+
+func parseImagesMetadata(idb *utils.ImagesDB) {
 	imagesDBPath := utils.GetCigImagesPath() + "/" + "images.json"
 	if _, err := os.Stat(imagesDBPath); os.IsNotExist(err) {
 		/* If it doesn't exist create an empty DB */
@@ -62,9 +63,9 @@ func parseImagesMetadata(idb *utils.ImagesDB)  {
 	}
 }
 
-/* 
-	* Check if image already exists by hash, return metadata.
-*/
+/*
+* Check if image already exists by hash, return metadata.
+ */
 
 func imageExistsByHash(imageShaHex string) (string, string) {
 	idb := utils.ImagesDB{}
@@ -79,9 +80,9 @@ func imageExistsByHash(imageShaHex string) (string, string) {
 	return "", ""
 }
 
-/* 
-	* Check if image already exists by tag, return metadata.
-*/
+/*
+* Check if image already exists by tag, return metadata.
+ */
 
 func imageExistByTag(imgName string, tagName string) (bool, string) {
 	idb := utils.ImagesDB{}
@@ -109,11 +110,11 @@ func marshalImageMetadata(idb utils.ImagesDB) {
 	}
 }
 
-/* 
-	* Store image metadata in images.json
-	* ubuntu -> unique_hash
-	* ubuntu:latest -> ubuntu
-*/
+/*
+* Store image metadata in images.json
+* ubuntu -> unique_hash
+* ubuntu:latest -> ubuntu
+ */
 
 func storeImageMetadata(image string, tag string, imageShaHex string) {
 	idb := utils.ImagesDB{}
@@ -127,15 +128,14 @@ func storeImageMetadata(image string, tag string, imageShaHex string) {
 	marshalImageMetadata(idb)
 }
 
-
 /*
-	* Download image if required and write it's metadata.
-*/ 
+* Download image if required and write it's metadata.
+ */
 
 func downloadImage(img v1.Image, imageShaHex string, src string) {
 	path := utils.GetCigTempPath() + "/" + imageShaHex
 	os.Mkdir(path, 0755)
-	path +="/package.tar"
+	path += "/package.tar"
 	/* Save the image as a tar file */
 	if err := crane.SaveLegacy(img, src, path); err != nil {
 		log.Fatalf("saving tarball %s: %v", path, err)
@@ -169,8 +169,12 @@ func DownloadImageIfRequired(src string) string {
 			downloadImage(img, imageShaHex, src)
 			untarFile(imageShaHex)
 			processLayerTarballs(imageShaHex, manifest.Config.Digest.Hex)
-			// storeImageMetadata(imgName, tagName, imageShaHex)
-			// deleteTempImageFiles(imageShaHex)
+			storeImageMetadata(imgName, tagName, imageShaHex)
+			/*
+				Delete folder containing tarball of image
+			*/
+			tmpPath := utils.GetCigTempPath() + "/" + imageShaHex
+			utils.DeleteFiles(tmpPath)
 			return imageShaHex
 		}
 	} else {
