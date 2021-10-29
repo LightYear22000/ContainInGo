@@ -13,16 +13,16 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
-func getBasePathForImage(imageShaHex string) string {
+func GetBasePathForImage(imageShaHex string) string {
 	return utils.GetCigImagesPath() + "/" + imageShaHex
 }
 
-func getManifestPathForImage(imageShaHex string) string {
-	return getBasePathForImage(imageShaHex) + "/manifest.json"
+func GetManifestPathForImage(imageShaHex string) string {
+	return GetBasePathForImage(imageShaHex) + "/manifest.json"
 }
 
-func getConfigPathForImage(imageShaHex string) string {
-	return getBasePathForImage(imageShaHex) + "/" + imageShaHex + ".json"
+func GetConfigPathForImage(imageShaHex string) string {
+	return GetBasePathForImage(imageShaHex) + "/" + imageShaHex + ".json"
 }
 
 /*

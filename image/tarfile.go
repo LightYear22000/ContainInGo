@@ -142,8 +142,8 @@ func processLayerTarballs(imageShaHex string, fullImageHex string) {
 		}
 	}
 	/* Copy the manifest file for reference later */
-	utils.CopyFile(pathManifest, getManifestPathForImage(imageShaHex))
-	utils.CopyFile(pathConfig, getConfigPathForImage(imageShaHex))
+	utils.CopyFile(pathManifest, GetManifestPathForImage(imageShaHex))
+	utils.CopyFile(pathConfig, GetConfigPathForImage(imageShaHex))
 }
 
 
