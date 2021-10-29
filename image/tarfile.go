@@ -71,10 +71,8 @@ func untar(tarball, target string) error {
 
 		case tar.TypeSymlink:
 			linkPath := filepath.Join(target, header.Name)
+			utils.RemoveLinkIfExists(linkPath)
 			if err := os.Symlink(header.Linkname, linkPath); err != nil {
-				if os.IsExist(err) {
-					continue
-				}
 				return err
 			}
 			continue
@@ -104,7 +102,9 @@ func untar(tarball, target string) error {
 
 	/* To create hard links the targets must exist, so we do this finally */
 	for k, v := range hardLinks {
+		utils.RemoveLinkIfExists(k)
 		if err := os.Link(v, k); err != nil {
+			log.Println("Hardlink Error : ", err)
 			return err
 		}
 	}

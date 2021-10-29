@@ -95,3 +95,9 @@ func CopyFile(src, dst string) error {
 	}
 	return nil
 }
+
+func RemoveLinkIfExists(path string) {
+	if _, err := os.Lstat(path); err == nil {
+		os.Remove(path)
+	}
+}
