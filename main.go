@@ -66,7 +66,7 @@ func main() {
 		if len(fs.Args()) < 2 {
 			log.Fatalf("Please pass image name and command to run")
 		}
-		/* Create and setup the gocker0 network bridge we need */
+		/* Create and setup the CIG network bridge we need */
 		if isUp, _ := net.IsBridgeUp(); !isUp {
 			log.Println("Bringing up the cig0 bridge...")
 			if err := net.SetupBridge(); err != nil {
@@ -75,5 +75,15 @@ func main() {
 		}
 		log.Println("Bridge set up succesfully!")
 		container.InitContainer(*mem, *swap, *pids, *cpus, fs.Args()[0], fs.Args()[1:])
+
+	case "setup-netns":
+		net.SetupNewNetworkNamespace(os.Args[2])
+
+	case "setup-veth":
+		net.SetupContainerNetworkInterfaceStep1(os.Args[2])
+		net.SetupContainerNetworkInterfaceStep2(os.Args[2])
+	default:
+		usage()
+
 	}
 }

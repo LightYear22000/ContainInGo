@@ -1,13 +1,17 @@
 package container
 
 import (
+	"ContainInGo/image"
+	"ContainInGo/network"
+	"ContainInGo/utils"
+	"fmt"
 	"log"
 	"math/rand"
-	"fmt"
-	"ContainInGo/image"
-	"ContainInGo/utils"
-	"ContainInGo/network"
 	"os"
+	"os/exec"
+	"strconv"
+
+	"golang.org/x/sys/unix"
 )
 
 /* Generate container id */
@@ -39,6 +43,73 @@ func createContainerDirectories(containerID string) {
 	}
 }
 
+func prepareAndExecuteContainer(mem int, swap int, pids int, cpus float64,
+	containerID string, imageShaHex string, cmdArgs []string) {
+
+	/* Setup the network namespace  */
+	cmd := &exec.Cmd{
+		Path:   "/proc/self/exe",
+		Args:   []string{"/proc/self/exe", "setup-netns", containerID},
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+	cmd.Run()
+
+	/* Namespace and setup the virtual interface  */
+	cmd = &exec.Cmd{
+		Path:   "/proc/self/exe",
+		Args:   []string{"/proc/self/exe", "setup-veth", containerID},
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+	cmd.Run()
+	/*
+		From namespaces(7)
+		       Namespace Flag            Isolates
+		       --------- ----   		 --------
+		       Cgroup    CLONE_NEWCGROUP Cgroup root directory
+		       IPC       CLONE_NEWIPC    System V IPC,
+		                                 POSIX message queues
+		       Network   CLONE_NEWNET    Network devices,
+		                                 stacks, ports, etc.
+		       Mount     CLONE_NEWNS     Mount points
+		       PID       CLONE_NEWPID    Process IDs
+		       Time      CLONE_NEWTIME   Boot and monotonic
+		                                 clocks
+		       User      CLONE_NEWUSER   User and group IDs
+		       UTS       CLONE_NEWUTS    Hostname and NIS
+		                                 domain name
+	*/
+	var opts []string
+	if mem > 0 {
+		opts = append(opts, "--mem="+strconv.Itoa(mem))
+	}
+	if swap >= 0 {
+		opts = append(opts, "--swap="+strconv.Itoa(swap))
+	}
+	if pids > 0 {
+		opts = append(opts, "--pids="+strconv.Itoa(pids))
+	}
+	if cpus > 0 {
+		opts = append(opts, "--cpus="+strconv.FormatFloat(cpus, 'f', 1, 64))
+	}
+	opts = append(opts, "--img="+imageShaHex)
+	args := append([]string{containerID}, cmdArgs...)
+	args = append(opts, args...)
+	args = append([]string{"child-mode"}, args...)
+	cmd = exec.Command("/proc/self/exe", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.SysProcAttr = &unix.SysProcAttr{
+		Cloneflags: unix.CLONE_NEWPID |
+			unix.CLONE_NEWNS |
+			unix.CLONE_NEWUTS |
+			unix.CLONE_NEWIPC,
+	}
+	utils.DoOrDie(cmd.Run())
+}
+
 func InitContainer(mem int, swap int, pids int, cpus float64, src string, args []string) {
 	containerID := generateContainerID()
 	log.Printf("New container ID: %s\n", containerID)
@@ -49,4 +120,10 @@ func InitContainer(mem int, swap int, pids int, cpus float64, src string, args [
 	if err := network.SetupVirtualEthOnHost(containerID); err != nil {
 		log.Fatalf("Unable to setup Veth0 on host: %v", err)
 	}
+	prepareAndExecuteContainer(mem, swap, pids, cpus, containerID, imageShaHex, args)
+	log.Printf("Container done.\n")
+	// unmountNetworkNamespace(containerID)
+	// unmountContainerFs(containerID)
+	// removeCGroups(containerID)
+	// os.RemoveAll(getGockerContainersPath() + "/" + containerID)
 }

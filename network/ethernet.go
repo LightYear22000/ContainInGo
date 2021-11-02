@@ -4,6 +4,7 @@ import (
 	"github.com/vishvananda/netlink"
 	"math/rand"
 	"net"
+	"fmt"
 )
 
 func createMACAddress() net.HardwareAddr {
@@ -12,6 +13,12 @@ func createMACAddress() net.HardwareAddr {
 	hw[1] = 0x42
 	rand.Read(hw[2:])
 	return hw
+}
+
+func CreateIPAddress() string {
+	byte1 := rand.Intn(254)
+	byte2 := rand.Intn(254)
+	return fmt.Sprintf("172.29.%d.%d", byte1, byte2)
 }
 
 func SetupVirtualEthOnHost(containerID string) error {

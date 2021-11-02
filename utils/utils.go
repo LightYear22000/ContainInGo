@@ -50,10 +50,10 @@ func StringInSlice(a string, list []string) bool {
 
 func InitCigDirs() (err error) {
 	dirs := []string{cigHomePath, cigTempPath, cigImagesPath, cigContainersPath}
-	return createDirsIfDontExist(dirs)
+	return CreateDirsIfDontExist(dirs)
 }
 
-func createDirsIfDontExist(dirs []string) error {
+func CreateDirsIfDontExist(dirs []string) error {
 	for _, dir := range dirs {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			if err = os.MkdirAll(dir, 0755); err != nil {
@@ -103,17 +103,17 @@ func RemoveLinkIfExists(path string) {
 }
 
 func DeleteFiles(path string) {
-	doOrDieWithMsg(os.RemoveAll(path),
+	DoOrDieWithMsg(os.RemoveAll(path),
 		"Unable to file: "+path)
 }
 
-func doOrDie(err error) {
+func DoOrDie(err error) {
 	if err != nil {
 		log.Fatalf("Fatal error: %v\n", err)
 	}
 }
 
-func doOrDieWithMsg(err error, msg string) {
+func DoOrDieWithMsg(err error, msg string) {
 	if err != nil {
 		log.Fatalf("Fatal error: %s: %v\n", msg, err)
 	}
