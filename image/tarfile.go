@@ -118,7 +118,7 @@ func untar(tarball, target string) error {
 func processLayerTarballs(imageShaHex string, fullImageHex string) {
 	tmpPathDir := utils.GetCigTempPath() + "/" + imageShaHex
 	pathManifest := tmpPathDir + "/manifest.json"
-	pathConfig := tmpPathDir + "/" + fullImageHex + ".json"
+	pathConfig := tmpPathDir + "/" + "sha256:" + fullImageHex
 
 	mani := utils.Manifest{}
 	utils.ParseManifest(pathManifest, &mani)
@@ -145,5 +145,3 @@ func processLayerTarballs(imageShaHex string, fullImageHex string) {
 	utils.CopyFile(pathManifest, GetManifestPathForImage(imageShaHex))
 	utils.CopyFile(pathConfig, GetConfigPathForImage(imageShaHex))
 }
-
-

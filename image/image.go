@@ -1,8 +1,8 @@
 package image
 
 import (
-	"encoding/json"
 	"ContainInGo/utils"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -172,8 +172,8 @@ func DownloadImageIfRequired(src string) string {
 			/*
 				Delete folder containing tarball of image
 			*/
-			tmpPath := utils.GetCigTempPath() + "/" + imageShaHex
-			utils.DeleteFiles(tmpPath)
+			// tmpPath := utils.GetCigTempPath() + "/" + imageShaHex
+			// utils.DeleteFiles(tmpPath)
 			return imageShaHex
 		}
 	} else {
@@ -183,13 +183,13 @@ func DownloadImageIfRequired(src string) string {
 }
 
 func ParseContainerConfig(imageShaHex string) utils.ImageConfig {
-	imagesConfigPath := GetManifestPathForImage(imageShaHex)
+	imagesConfigPath := GetConfigPathForImage(imageShaHex)
 	data, err := ioutil.ReadFile(imagesConfigPath)
 	if err != nil {
 		utils.LogErr(err)
 		log.Fatalf("Could not read image config file")
 	}
-	log.Println(data)
+	// log.Println(data)
 	imgConfig := utils.ImageConfig{}
 	if err := json.Unmarshal(data, &imgConfig); err != nil {
 		log.Fatalf("Unable to parse image config data!")
