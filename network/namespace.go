@@ -2,17 +2,18 @@ package network
 
 import (
 	"ContainInGo/utils"
-	"golang.org/x/sys/unix"
 	"log"
-	"github.com/vishvananda/netlink"
 	"net"
+	
+	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 /*
-	* Set up a new network namespace for the  current process and mounts it.
-*/
+* Set up a new network namespace for the  current process and mounts it.
+ */
 func SetupNewNetworkNamespace(containerID string) {
-	_ = utils.CreateDirsIfDontExist([]string{utils.GetCigContainersPath()})
+	_ = utils.CreateDirsIfDontExist([]string{utils.GetCigNetNsPath()})
 	nsMount := utils.GetCigNetNsPath() + "/" + containerID
 	if _, err := unix.Open(nsMount, unix.O_RDONLY|unix.O_CREAT|unix.O_EXCL, 0644); err != nil {
 		log.Fatalf("Unable to open bind mount file: :%v\n", err)
@@ -36,11 +37,11 @@ func SetupNewNetworkNamespace(containerID string) {
 }
 
 /*
-	*  We connect veth0 part of the pair to our bridge, cig0 bridge on the host. 
-	*  Later, we will use veth1 part of the pair inside the container. 
-	*  This pair is like a pipe and is the secret to network communication from within 
-	*  containers which have their own network namespace.
-*/
+*  We connect veth0 part of the pair to our bridge, cig0 bridge on the host.
+*  Later, we will use veth1 part of the pair inside the container.
+*  This pair is like a pipe and is the secret to network communication from within
+*  containers which have their own network namespace.
+ */
 
 func SetupContainerNetworkInterfaceStep1(containerID string) {
 	nsMount := utils.GetCigNetNsPath() + "/" + containerID
@@ -83,7 +84,7 @@ func SetupContainerNetworkInterfaceStep2(containerID string) {
 	}
 
 	/* Bring up the interface */
-	utils.DoOrDieWithMsg(netlink.LinkSetUp(veth1Link), "Unable to bring up veth1")
+	utils.LogErrWithMsg(netlink.LinkSetUp(veth1Link), "Unable to bring up veth1")
 
 	/* Add a default route */
 	route := netlink.Route{
@@ -92,5 +93,39 @@ func SetupContainerNetworkInterfaceStep2(containerID string) {
 		Gw:        net.ParseIP("172.29.0.1"),
 		Dst:       nil,
 	}
-	utils.DoOrDieWithMsg(netlink.RouteAdd(&route), "Unable to add default route")
+	utils.LogErrWithMsg(netlink.RouteAdd(&route), "Unable to add default route")
+}
+
+/*
+	Move the process to the new network namespace.
+*/
+func JoinContainerNetworkNamespace(containerID string) error {
+	nsMount := utils.GetCigNetNsPath() + "/" + containerID
+	fd, err := unix.Open(nsMount, unix.O_RDONLY, 0)
+	if err != nil {
+		log.Printf("Unable to open: %v\n", err)
+		return err
+	}
+	if err := unix.Setns(fd, unix.CLONE_NEWNET); err != nil {
+		log.Printf("Setns system call failed: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+/*
+	This is the function that sets the IP address for the local interface.
+*/
+
+func SetupLocalInterface() {
+	links, _ := netlink.LinkList()
+	for _, link := range links {
+		if link.Attrs().Name == "lo" {
+			loAddr, _ := netlink.ParseAddr("127.0.0.1/32")
+			if err := netlink.AddrAdd(link, loAddr); err != nil {
+				log.Println("Unable to configure local interface!")
+			}
+			netlink.LinkSetUp(link)
+		}
+	}
 }

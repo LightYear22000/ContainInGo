@@ -2,7 +2,6 @@ package image
 
 import (
 	"encoding/json"
-	// "fmt"
 	"ContainInGo/utils"
 	"io/ioutil"
 	"log"
@@ -181,4 +180,19 @@ func DownloadImageIfRequired(src string) string {
 		log.Println("Image already exists. Not downloading.")
 		return imageShaHex
 	}
+}
+
+func ParseContainerConfig(imageShaHex string) utils.ImageConfig {
+	imagesConfigPath := GetManifestPathForImage(imageShaHex)
+	data, err := ioutil.ReadFile(imagesConfigPath)
+	if err != nil {
+		utils.LogErr(err)
+		log.Fatalf("Could not read image config file")
+	}
+	log.Println(data)
+	imgConfig := utils.ImageConfig{}
+	if err := json.Unmarshal(data, &imgConfig); err != nil {
+		log.Fatalf("Unable to parse image config data!")
+	}
+	return imgConfig
 }

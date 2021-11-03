@@ -107,14 +107,47 @@ func prepareAndExecuteContainer(mem int, swap int, pids int, cpus float64,
 			unix.CLONE_NEWUTS |
 			unix.CLONE_NEWIPC,
 	}
-	utils.DoOrDie(cmd.Run())
+	utils.LogErr(cmd.Run())
+}
+
+func ExecContainerCommand(mem int, swap int, pids int, cpus float64,
+	containerID string, imageShaHex string, args []string) {
+	mntPath := GetContainerFSHome(containerID) + "/mnt"
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	imgConfig := image.ParseContainerConfig(imageShaHex)
+	utils.LogErrWithMsg(unix.Sethostname([]byte(containerID)), "Unable to set hostname")
+	utils.LogErrWithMsg(network.JoinContainerNetworkNamespace(containerID), "Unable to join container network namespace")
+	CreateCGroups(containerID, true)
+	ConfigureCGroups(containerID, mem, swap, pids, cpus)
+	utils.LogErrWithMsg(copyNameserverConfig(containerID), "Unable to copy resolve.conf")
+	utils.LogErrWithMsg(unix.Chroot(mntPath), "Unable to chroot")
+	utils.LogErrWithMsg(os.Chdir("/"), "Unable to change directory")
+	createDirsIfDontExist([]string{"/proc", "/sys"})
+	utils.LogErrWithMsg(unix.Mount("proc", "/proc", "proc", 0, ""), "Unable to mount proc")
+	utils.LogErrWithMsg(unix.Mount("tmpfs", "/tmp", "tmpfs", 0, ""), "Unable to mount tmpfs")
+	utils.LogErrWithMsg(unix.Mount("tmpfs", "/dev", "tmpfs", 0, ""), "Unable to mount tmpfs on /dev")
+	createDirsIfDontExist([]string{"/dev/pts"})
+	utils.LogErrWithMsg(unix.Mount("devpts", "/dev/pts", "devpts", 0, ""), "Unable to mount devpts")
+	utils.LogErrWithMsg(unix.Mount("sysfs", "/sys", "sysfs", 0, ""), "Unable to mount sysfs")
+	network.SetupLocalInterface()
+	cmd.Env = imgConfig.Config.Env
+	cmd.Run()
+	utils.LogErr(unix.Unmount("/dev/pts", 0))
+	utils.LogErr(unix.Unmount("/dev", 0))
+	utils.LogErr(unix.Unmount("/sys", 0))
+	utils.LogErr(unix.Unmount("/proc", 0))
+	utils.LogErr(unix.Unmount("/tmp", 0))
 }
 
 func InitContainer(mem int, swap int, pids int, cpus float64, src string, args []string) {
 	containerID := generateContainerID()
 	log.Printf("New container ID: %s\n", containerID)
 	imageShaHex := image.DownloadImageIfRequired(src)
-	fmt.Printf(src + " hash : %v\n", imageShaHex)
+	fmt.Printf(src+" hash : %v\n", imageShaHex)
 	createContainerDirectories(containerID)
 	mountOverlayFileSystem(containerID, imageShaHex)
 	if err := network.SetupVirtualEthOnHost(containerID); err != nil {

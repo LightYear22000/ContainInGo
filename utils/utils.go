@@ -103,17 +103,17 @@ func RemoveLinkIfExists(path string) {
 }
 
 func DeleteFiles(path string) {
-	DoOrDieWithMsg(os.RemoveAll(path),
+	LogErrWithMsg(os.RemoveAll(path),
 		"Unable to file: "+path)
 }
 
-func DoOrDie(err error) {
+func LogErr(err error) {
 	if err != nil {
 		log.Fatalf("Fatal error: %v\n", err)
 	}
 }
 
-func DoOrDieWithMsg(err error, msg string) {
+func LogErrWithMsg(err error, msg string) {
 	if err != nil {
 		log.Fatalf("Fatal error: %s: %v\n", msg, err)
 	}

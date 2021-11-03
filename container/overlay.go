@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func getContainerFSHome(contanerID string) string {
+func GetContainerFSHome(contanerID string) string {
 	return utils.GetCigContainersPath() + "/" + contanerID + "/fs"
 }
 
@@ -29,7 +29,7 @@ func mountOverlayFileSystem(containerID string, imageShaHex string) {
 		srcLayers = append([]string{imageBasePath + "/" + layer[:12] + "/fs"}, srcLayers...)
 		//srcLayers = append(srcLayers, imageBasePath + "/" + layer[:12] + "/fs")
 	}
-	contFSHome := getContainerFSHome(containerID)
+	contFSHome := GetContainerFSHome(containerID)
 	mntOptions := "lowerdir=" + strings.Join(srcLayers, ":") + ",upperdir=" + contFSHome + "/upperdir,workdir=" + contFSHome + "/workdir"
 	if err := unix.Mount("none", contFSHome+"/mnt", "overlay", 0, mntOptions); err != nil {
 		log.Fatalf("Mount failed: %v\n", err)

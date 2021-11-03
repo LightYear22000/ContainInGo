@@ -76,12 +76,36 @@ func main() {
 		log.Println("Bridge set up succesfully!")
 		container.InitContainer(*mem, *swap, *pids, *cpus, fs.Args()[0], fs.Args()[1:])
 
+	/*
+		Setup Network namespace for container.
+	*/
 	case "setup-netns":
 		net.SetupNewNetworkNamespace(os.Args[2])
 
+	/*
+		Setup virtual lan interface for the container and assign the ip-address, subnet mask
+		and default gateway.
+	*/
 	case "setup-veth":
 		net.SetupContainerNetworkInterfaceStep1(os.Args[2])
 		net.SetupContainerNetworkInterfaceStep2(os.Args[2])
+	
+	case "child-mode":
+		fs := flag.FlagSet{}
+		fs.ParseErrorsWhitelist.UnknownFlags = true
+
+		mem := fs.Int("mem", -1, "Max RAM to allow in  MB")
+		swap := fs.Int("swap", -1, "Max swap to allow in  MB")
+		pids := fs.Int("pids", -1, "Number of max processes to allow")
+		cpus := fs.Float64("cpus", -1, "Number of CPU cores to restrict to")
+		image := fs.String("img", "", "Container image")
+		if err := fs.Parse(os.Args[2:]); err != nil {
+			fmt.Println("Error parsing: ", err)
+		}
+		if len(fs.Args()) < 2 {
+			log.Fatalf("Please pass image name and command to run")
+		}
+		container.ExecContainerCommand(*mem, *swap, *pids, *cpus, fs.Args()[0], *image, fs.Args()[1:])
 	default:
 		usage()
 

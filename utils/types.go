@@ -32,6 +32,6 @@ type (
 		Cmd []string	`json:"Cmd"`
 	}
 	ImageConfig struct {
-		Config ImageConfigDetails `json:"config"`
+		Config ImageConfigDetails `json:"Config"`
 	}
 )
