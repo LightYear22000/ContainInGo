@@ -172,8 +172,8 @@ func DownloadImageIfRequired(src string) string {
 			/*
 				Delete folder containing tarball of image
 			*/
-			// tmpPath := utils.GetCigTempPath() + "/" + imageShaHex
-			// utils.DeleteFiles(tmpPath)
+			tmpPath := utils.GetCigTempPath() + "/" + imageShaHex
+			utils.DeleteFiles(tmpPath)
 			return imageShaHex
 		}
 	} else {
