@@ -83,7 +83,7 @@ func imageExistsByHash(imageShaHex string) (string, string) {
 * Check if image already exists by tag, return metadata.
  */
 
-func imageExistByTag(imgName string, tagName string) (bool, string) {
+func ImageExistByTag(imgName string, tagName string) (bool, string) {
 	idb := utils.ImagesDB{}
 	parseImagesMetadata(&idb)
 	for k, v := range idb {
@@ -144,7 +144,7 @@ func downloadImage(img v1.Image, imageShaHex string, src string) {
 
 func DownloadImageIfRequired(src string) string {
 	imgName, tagName := getImageNameAndTag(src)
-	if downloadNotRequired, imageShaHex := imageExistByTag(imgName, tagName); !downloadNotRequired {
+	if downloadNotRequired, imageShaHex := ImageExistByTag(imgName, tagName); !downloadNotRequired {
 		/* Setup the image we want to pull */
 		log.Printf("Downloading metadata for %s:%s, please wait...", imgName, tagName)
 		img, err := crane.Pull(strings.Join([]string{imgName, tagName}, ":"))
@@ -182,6 +182,10 @@ func DownloadImageIfRequired(src string) string {
 	}
 }
 
+/*
+	Get container configuration data from configuration json file
+*/
+
 func ParseContainerConfig(imageShaHex string) utils.ImageConfig {
 	imagesConfigPath := GetConfigPathForImage(imageShaHex)
 	data, err := ioutil.ReadFile(imagesConfigPath)
@@ -189,10 +193,22 @@ func ParseContainerConfig(imageShaHex string) utils.ImageConfig {
 		utils.LogErr(err)
 		log.Fatalf("Could not read image config file")
 	}
-	// log.Println(data)
 	imgConfig := utils.ImageConfig{}
 	if err := json.Unmarshal(data, &imgConfig); err != nil {
 		log.Fatalf("Unable to parse image config data!")
 	}
 	return imgConfig
+}
+
+func GetImageAndTagForHash(imageShaHash string) (string, string) {
+	idb := utils.ImagesDB{}
+	parseImagesMetadata(&idb)
+	for image, versions := range idb {
+		for version, hash := range versions {
+			if hash == imageShaHash {
+				return image, version
+			}
+		}
+	}
+	return "", ""
 }

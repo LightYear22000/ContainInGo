@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"ContainInGo/container"
+	"ContainInGo/exec"
 	flag "github.com/spf13/pflag"
 )
 
@@ -106,7 +107,10 @@ func main() {
 			log.Fatalf("Please pass image name and command to run")
 		}
 		container.ExecContainerCommand(*mem, *swap, *pids, *cpus, fs.Args()[0], *image, fs.Args()[1:])
-		
+
+	case "exec":
+		exec.ExecInContainer(os.Args[2])
+
 	default:
 		usage()
 

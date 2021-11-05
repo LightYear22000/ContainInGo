@@ -34,4 +34,10 @@ type (
 	ImageConfig struct {
 		Config ImageConfigDetails `json:"Config"`
 	}
+	RunningContainerInfo struct {
+		ContainerId string
+		Image string
+		Command string
+		Pid int
+	}
 )
