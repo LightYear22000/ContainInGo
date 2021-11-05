@@ -1,8 +1,11 @@
 package container
 
-import(
-	"os"
+import (
 	"ContainInGo/utils"
+	"log"
+	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 func copyNameserverConfig(containerID string) error {
@@ -20,4 +23,11 @@ func copyNameserverConfig(containerID string) error {
 		}
 	}
 	return nil
+}
+
+func unmountNetworkNamespace(containerID string) {
+	netNsPath := utils.GetCigNetNsPath() + "/" + containerID
+	if err := unix.Unmount(netNsPath, 0); err != nil {
+		log.Fatalf("Uable to mount network namespace: %v at %s", err, netNsPath)
+	}
 }

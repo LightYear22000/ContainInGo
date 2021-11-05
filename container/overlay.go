@@ -5,6 +5,7 @@ import (
 	"ContainInGo/utils"
 	"log"
 	"strings"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -33,5 +34,12 @@ func mountOverlayFileSystem(containerID string, imageShaHex string) {
 	mntOptions := "lowerdir=" + strings.Join(srcLayers, ":") + ",upperdir=" + contFSHome + "/upperdir,workdir=" + contFSHome + "/workdir"
 	if err := unix.Mount("none", contFSHome+"/mnt", "overlay", 0, mntOptions); err != nil {
 		log.Fatalf("Mount failed: %v\n", err)
+	}
+}
+
+func unmountContainerFs(containerID string) {
+	mountedPath := utils.GetCigContainersPath() + "/" + containerID + "/fs/mnt"
+	if err := unix.Unmount(mountedPath, 0); err != nil {
+		log.Fatalf("Uable to mount container file system: %v at %s", err, mountedPath)
 	}
 }

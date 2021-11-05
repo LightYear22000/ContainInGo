@@ -155,8 +155,8 @@ func InitContainer(mem int, swap int, pids int, cpus float64, src string, args [
 	}
 	prepareAndExecuteContainer(mem, swap, pids, cpus, containerID, imageShaHex, args)
 	log.Printf("Container done.\n")
-	// unmountNetworkNamespace(containerID)
-	// unmountContainerFs(containerID)
-	// removeCGroups(containerID)
-	// os.RemoveAll(getGockerContainersPath() + "/" + containerID)
+	unmountNetworkNamespace(containerID)
+	unmountContainerFs(containerID)
+	removeCGroups(containerID)
+	os.RemoveAll(utils.GetCigContainersPath() + "/" + containerID)
 }

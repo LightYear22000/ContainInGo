@@ -92,3 +92,13 @@ func ConfigureCGroups(containerID string, mem int, swap int, pids int, cpus floa
 		setPidsLimit(containerID, pids)
 	}
 }
+
+func removeCGroups(containerID string) {
+	cgroups := []string{"/sys/fs/cgroup/memory/cig/" + containerID,
+		"/sys/fs/cgroup/pids/cig/" + containerID,
+		"/sys/fs/cgroup/cpu/cig/" + containerID}
+
+	for _, cgroupDir := range cgroups {
+		utils.LogErrWithMsg(os.Remove(cgroupDir), "Unable to remove cgroup dir")
+	}
+}

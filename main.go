@@ -106,6 +106,7 @@ func main() {
 			log.Fatalf("Please pass image name and command to run")
 		}
 		container.ExecContainerCommand(*mem, *swap, *pids, *cpus, fs.Args()[0], *image, fs.Args()[1:])
+		
 	default:
 		usage()
 

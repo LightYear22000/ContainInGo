@@ -1,5 +1,5 @@
 image = alpine
-cmd = /bin/bash
+cmd = /bin/sh
 build:
 	go build -o cig
 run:
