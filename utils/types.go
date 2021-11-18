@@ -21,23 +21,23 @@ package utils
 
 type (
 	ImageEntries map[string]string
-	ImagesDB map[string]ImageEntries
-	Manifest []struct {
-		Config string
+	ImagesDB     map[string]ImageEntries
+	Manifest     []struct {
+		Config   string
 		RepoTags []string
-		Layers []string
+		Layers   []string
 	}
 	ImageConfigDetails struct {
-		Env []string	`json:"Env"`
-		Cmd []string	`json:"Cmd"`
+		Env []string `json:"Env"`
+		Cmd []string `json:"Cmd"`
 	}
 	ImageConfig struct {
 		Config ImageConfigDetails `json:"Config"`
 	}
 	RunningContainerInfo struct {
 		ContainerId string
-		Image string
-		Command string
-		Pid int
+		Image       string
+		Command     string
+		Pid         int
 	}
 )

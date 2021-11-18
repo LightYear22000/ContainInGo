@@ -3,6 +3,7 @@ package image
 import (
 	"ContainInGo/utils"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -211,4 +212,38 @@ func GetImageAndTagForHash(imageShaHash string) (string, string) {
 		}
 	}
 	return "", ""
+}
+
+func PrintAvailableImages() {
+	idb := utils.ImagesDB{}
+	parseImagesMetadata(&idb)
+	fmt.Printf("IMAGE\t             TAG\t   ID\n")
+	for image, details := range idb {
+		fmt.Printf("%s", image)
+		for tag, hash := range details {
+			fmt.Printf("\t%16s %s\n", tag, hash)
+		}
+	}
+}
+
+func RemoveImageMetadata(imageShaHex string) {
+	idb := utils.ImagesDB{}
+	ientries := utils.ImageEntries{}
+	parseImagesMetadata(&idb)
+	imgName, _ := imageExistsByHash(imageShaHex)
+	if len(imgName) == 0 {
+		log.Fatalf("Could not get image details")
+	}
+	ientries = idb[imgName]
+	for tag, hash := range ientries {
+		if hash == imageShaHex {
+			delete(ientries, tag)
+		}
+	}
+	if len(ientries) == 0 {
+		delete(idb, imgName)
+	} else {
+		idb[imgName] = ientries
+	}
+	marshalImageMetadata(idb)
 }

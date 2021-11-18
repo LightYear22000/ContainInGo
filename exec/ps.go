@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"log"
 )
 
 /*
@@ -133,4 +134,40 @@ func getDistribution(containerID string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func PrintRunningContainers() {
+	containers, err := getRunningContainers()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	fmt.Println("CONTAINER ID\tIMAGE\t\tCOMMAND")
+	for _, container := range containers {
+		fmt.Printf("%s\t%s\t%s\n", container.ContainerId, container.Image, container.Command)
+	}
+}
+
+func DeleteImageByHash(imageShaHex string) {
+	// Ensure that no running container is using the image we're setting
+	// out to delete. There is a race condition possible here, but we use
+	// the ostrich algorithm
+	imgName, imgTag := image.GetImageAndTagForHash(imageShaHex)
+	if len(imgName) == 0 {
+		log.Fatalf("No such image")
+	}
+	containers, err := getRunningContainers()
+	if err != nil {
+		log.Fatalf("Unable to get running containers list: %v\n", err)
+	}
+	for _, container := range containers {
+		if container.Image == imgName + ":" + imgTag {
+			log.Fatalf("Cannot delete image becuase it is in use by: %s",
+						container.ContainerId)
+		}
+	}
+
+	utils.LogErrWithMsg(os.RemoveAll(utils.GetCigImagesPath() + "/" + imageShaHex),
+		"Unable to remove image directory")
+	image.RemoveImageMetadata(imageShaHex)
 }

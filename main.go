@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ContainInGo/image"
 	net "ContainInGo/network"
 	"ContainInGo/utils"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	"ContainInGo/container"
 	"ContainInGo/exec"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -90,7 +92,7 @@ func main() {
 	case "setup-veth":
 		net.SetupContainerNetworkInterfaceStep1(os.Args[2])
 		net.SetupContainerNetworkInterfaceStep2(os.Args[2])
-	
+
 	case "child-mode":
 		fs := flag.FlagSet{}
 		fs.ParseErrorsWhitelist.UnknownFlags = true
@@ -110,6 +112,19 @@ func main() {
 
 	case "exec":
 		exec.ExecInContainer(os.Args[2])
+
+	case "ps":
+		exec.PrintRunningContainers()
+
+	case "images":
+		image.PrintAvailableImages()
+
+	case "rmi":
+		if len(os.Args) < 3 {
+			usage()
+			os.Exit(1)
+		}
+		exec.DeleteImageByHash(os.Args[2])
 
 	default:
 		usage()
